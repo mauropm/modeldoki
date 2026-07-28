@@ -30,7 +30,7 @@ process_info() {
 
 process_info "LM Studio" "LM Studio"
 process_info "Open WebUI" "open-webui"
-process_info "LLMRouter" "llm-router"
+process_info "Bifrost" "bifrost-http"
 
 # ─── Ports ──────────────────────────────────────────────────────────────────
 log_step "Ports"
@@ -47,7 +47,7 @@ done
 # ─── Launchd Services ──────────────────────────────────────────────────────
 log_step "launchd Services"
 
-for label in "com.modeldoki.openwebui" "com.modeldoki.llmrouter"; do
+for label in "com.modeldoki.openwebui" "com.modeldoki.bifrost"; do
   # Parse the `launchctl list` table: PID  Status  Label
   entry=$(launchctl list 2>/dev/null | awk -v l="$label" '$3 == l' || true)
   if [[ -n "$entry" ]]; then

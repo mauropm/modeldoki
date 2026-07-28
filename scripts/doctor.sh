@@ -96,13 +96,13 @@ else
   log_error "Open WebUI not installed"
 fi
 
-# ─── LLMRouter ──────────────────────────────────────────────────────────────
-log_step "LLMRouter"
-LLMROUTER_BIN="${HOME}/.modeldoki/llmrouter/llm-router"
-if [[ -x "$LLMROUTER_BIN" ]]; then
-  log_ok "LLMRouter binary exists"
+# ─── Bifrost ─────────────────────────────────────────────────────────────────
+log_step "Bifrost"
+BIFROST_BIN="${HOME}/.modeldoki/bifrost/bifrost-http"
+if [[ -x "$BIFROST_BIN" ]]; then
+  log_ok "Bifrost binary exists"
 else
-  log_warn "LLMRouter binary not found"
+  log_warn "Bifrost binary not found"
 fi
 
 # ─── Models ──────────────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ done
 
 # ─── launchd Services ──────────────────────────────────────────────────────
 log_step "launchd Services"
-for label in "com.modeldoki.openwebui" "com.modeldoki.llmrouter"; do
+for label in "com.modeldoki.openwebui" "com.modeldoki.bifrost"; do
   if launchctl list | grep -q "$label"; then
     log_ok "launchd: ${label} — loaded"
   else

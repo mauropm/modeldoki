@@ -61,21 +61,21 @@ else
   fi
 fi
 
-# ─── 3. LLMRouter ────────────────────────────────────────────────────────────
-log_step "Starting LLMRouter"
+# ─── 3. Bifrost ──────────────────────────────────────────────────────────────
+log_step "Starting Bifrost"
 
-if launchctl list | grep -q "com.modeldoki.llmrouter"; then
-  log_ok "LLMRouter launchd service is running"
+if launchctl list | grep -q "com.modeldoki.bifrost"; then
+  log_ok "Bifrost launchd service is running"
 else
-  LLMROUTER_PLIST="${HOME}/Library/LaunchAgents/com.modeldoki.llmrouter.plist"
-  if [[ -f "$LLMROUTER_PLIST" ]]; then
-    launchctl load -w "$LLMROUTER_PLIST" 2>/dev/null && \
-      log_ok "LLMRouter started via launchd" || \
-      launchctl bootstrap gui/"$(id -u)" "$LLMROUTER_PLIST" 2>/dev/null && \
-      log_ok "LLMRouter bootstrapped via launchd" || \
-      log_warn "Could not start LLMRouter via launchd"
+  BIFROST_PLIST="${HOME}/Library/LaunchAgents/com.modeldoki.bifrost.plist"
+  if [[ -f "$BIFROST_PLIST" ]]; then
+    launchctl load -w "$BIFROST_PLIST" 2>/dev/null && \
+      log_ok "Bifrost started via launchd" || \
+      launchctl bootstrap gui/"$(id -u)" "$BIFROST_PLIST" 2>/dev/null && \
+      log_ok "Bifrost bootstrapped via launchd" || \
+      log_warn "Could not start Bifrost via launchd"
   else
-    log_warn "LLMRouter launchd plist not found"
+    log_warn "Bifrost launchd plist not found"
     log_info "Run scripts/configure_launchd.sh first"
   fi
 fi
@@ -95,4 +95,4 @@ done
 log_header "All services started"
 log_info "LM Studio API:    http://localhost:1234/v1  (both models)"
 log_info "Open WebUI:       http://localhost:3333"
-log_info "LLMRouter Admin:  http://localhost:6666"
+log_info "Bifrost Gateway:  http://localhost:6666"

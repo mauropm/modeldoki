@@ -21,7 +21,8 @@ log_step "Stopping all services"
 # ─── Remove launchd services ───────────────────────────────────────────────
 log_step "Removing launchd services"
 uninstall_launchd_service "openwebui" "${HOME}/Library/LaunchAgents/com.modeldoki.openwebui.plist"
-uninstall_launchd_service "llmrouter" "${HOME}/Library/LaunchAgents/com.modeldoki.llmrouter.plist"
+uninstall_launchd_service "bifrost" "${HOME}/Library/LaunchAgents/com.modeldoki.bifrost.plist"
+rm -f "${HOME}/Library/LaunchAgents/com.modeldoki.llmrouter.plist" 2>/dev/null || true
 
 # ─── Remove symlinks and configs ───────────────────────────────────────────
 log_step "Removing configurations"

@@ -53,24 +53,24 @@ if [[ -n "$OPENWEBUI_PIDS" ]]; then
   log_ok "Open WebUI orphan processes killed"
 fi
 
-# ─── 3. Unload LLMRouter ────────────────────────────────────────────────────
-log_step "Stopping LLMRouter"
+# ─── 3. Unload Bifrost ──────────────────────────────────────────────────────
+log_step "Stopping Bifrost"
 
-if launchctl list | grep -q "com.modeldoki.llmrouter"; then
-  LLMROUTER_PLIST="${HOME}/Library/LaunchAgents/com.modeldoki.llmrouter.plist"
-  if [[ -f "$LLMROUTER_PLIST" ]]; then
-    launchctl bootout gui/"$(id -u)" "$LLMROUTER_PLIST" 2>/dev/null || \
-      launchctl unload -w "$LLMROUTER_PLIST" 2>/dev/null || true
-    log_ok "LLMRouter stopped"
+if launchctl list | grep -q "com.modeldoki.bifrost"; then
+  BIFROST_PLIST="${HOME}/Library/LaunchAgents/com.modeldoki.bifrost.plist"
+  if [[ -f "$BIFROST_PLIST" ]]; then
+    launchctl bootout gui/"$(id -u)" "$BIFROST_PLIST" 2>/dev/null || \
+      launchctl unload -w "$BIFROST_PLIST" 2>/dev/null || true
+    log_ok "Bifrost stopped"
   fi
 else
-  log_info "LLMRouter not running"
+  log_info "Bifrost not running"
 fi
 
-LLMROUTER_PIDS=$(pgrep -f "llm-router" 2>/dev/null || true)
-if [[ -n "$LLMROUTER_PIDS" ]]; then
-  kill -TERM ${(f)LLMROUTER_PIDS} 2>/dev/null || true
-  log_ok "LLMRouter orphan processes killed"
+BIFROST_PIDS=$(pgrep -f "bifrost-http" 2>/dev/null || true)
+if [[ -n "$BIFROST_PIDS" ]]; then
+  kill -TERM ${(f)BIFROST_PIDS} 2>/dev/null || true
+  log_ok "Bifrost orphan processes killed"
 fi
 
 # ─── 4. Verify ports are free ────────────────────────────────────────────────

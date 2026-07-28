@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 #
-# Test the coding endpoint (Qwen 2.5-Coder 7B Instruct, routed via LLMRouter).
+# Test the coding endpoint (Qwen 2.5-Coder 7B Instruct, routed via Bifrost).
 # Set API_URL=http://localhost:1234/v1/chat/completions to hit LM Studio directly.
 #
 set -euo pipefail

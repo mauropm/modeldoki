@@ -4,44 +4,34 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 source "${SCRIPT_DIR}/lib.sh"
 
-log_header "modeldoki — LLMRouter Configuration"
+log_header "modeldoki — Bifrost Configuration"
 
 check_macos_version
 check_apple_silicon
 
-LLMROUTER_DIR="${HOME}/.modeldoki/llmrouter"
-LLMROUTER_BIN="${LLMROUTER_DIR}/llm-router"
-LLMROUTER_CONFIG="${CONFIGS_DIR}/llmrouter.yaml"
+BIFROST_DIR="${HOME}/.modeldoki/bifrost"
+BIFROST_BIN="${BIFROST_DIR}/bifrost-http"
+BIFROST_CONFIG="${BIFROST_DIR}/config.json"
 
-if [[ ! -f "$LLMROUTER_CONFIG" ]]; then
-  log_warn "llmrouter.yaml not found at ${LLMROUTER_CONFIG}"
+if [[ ! -f "$BIFROST_CONFIG" ]]; then
+  log_warn "Bifrost config not found at ${BIFROST_CONFIG}"
+  log_info "Run scripts/install_llmrouter.sh first"
   exit 1
 fi
 
-mkdir -p "$LLMROUTER_DIR"
+mkdir -p "$BIFROST_DIR"
 
-log_step "Installing LLMRouter configuration"
+log_step "Bifrost configuration is ready"
 
-cp "$LLMROUTER_CONFIG" "${LLMROUTER_DIR}/config.yaml"
-log_ok "Configuration copied to ${LLMROUTER_DIR}/config.yaml"
-
-log_step "Testing LLMRouter configuration"
-
-if [[ -x "$LLMROUTER_BIN" ]]; then
-  if "$LLMROUTER_BIN" --config "${LLMROUTER_DIR}/config.yaml" --validate 2>/dev/null; then
-    log_ok "LLMRouter configuration is valid"
-  else
-    log_warn "LLMRouter does not support --validate flag; checking syntax manually..."
-  fi
-else
-  log_warn "LLMRouter binary not yet installed"
-  log_info "Run scripts/install_llmrouter.sh first"
+if [[ -x "$BIFROST_BIN" ]]; then
+  "$BIFROST_BIN" --help >/dev/null 2>&1 && \
+    log_ok "Bifrost binary responds" || \
+    log_warn "Bifrost binary did not respond to --help"
 fi
 
-log_info "Routing configuration:"
-log_info "  qwen2.5-7b-instruct*       → Qwen 2.5 7B Instruct       (LM Studio, port 1234)"
-log_info "  qwen2.5-coder-7b-instruct* → Qwen 2.5-Coder 7B Instruct (LM Studio, port 1234)"
-log_info "  Dashboard   → http://localhost:6666"
-log_info "  API         → http://localhost:6666/v1"
+log_info "Bifrost will serve on http://localhost:6666"
+log_info "All models are routed to LM Studio (http://localhost:1234/v1)"
+log_info "Config file: ${BIFROST_CONFIG}"
 
-log_header "LLMRouter configuration complete"
+log_header "Bifrost configuration complete"
+log_info "Run scripts/start_all.sh to launch"

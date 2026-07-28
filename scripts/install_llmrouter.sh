@@ -4,64 +4,84 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 source "${SCRIPT_DIR}/lib.sh"
 
-log_header "modeldoki — LLMRouter Installation"
+log_header "modeldoki — Bifrost Installation"
 
 check_macos_version
 check_apple_silicon
 
-LLMROUTER_DIR="${HOME}/.modeldoki/llmrouter"
-LLMROUTER_BIN="${LLMROUTER_DIR}/llm-router"
-LLMROUTER_VERSION="v0.4.6"
-# TODO: point this at the actual LLMRouter repository for your deployment.
-LLMROUTER_REPO="${LLMROUTER_REPO:-https://github.com/your-org/llm-router}"
-LLMROUTER_REPO_API="${LLMROUTER_REPO/github.com/api.github.com\/repos}"
+require curl
 
-if [[ -x "$LLMROUTER_BIN" ]]; then
-  log_ok "LLMRouter binary found at ${LLMROUTER_BIN}"
+BIFROST_DIR="${HOME}/.modeldoki/bifrost"
+BIFROST_BIN="${BIFROST_DIR}/bifrost-http"
+
+if [[ -x "$BIFROST_BIN" ]]; then
+  log_ok "Bifrost binary already found at ${BIFROST_BIN}"
 else
-  log_step "Downloading LLMRouter binary"
+  log_step "Downloading Bifrost binary"
 
-  mkdir -p "$LLMROUTER_DIR"
+  mkdir -p "$BIFROST_DIR"
 
-  LATEST_TAG=$(curl -sfL "${LLMROUTER_REPO_API}/releases/latest" 2>/dev/null | \
-    jq -r '.tag_name // empty' 2>/dev/null || echo "")
-  LLMROUTER_TAG="${LATEST_TAG:-$LLMROUTER_VERSION}"
+  # Resolve latest version from the API endpoint.
+  LATEST_VERSION=$(curl -sfL "https://getbifrost.ai/latest-release" 2>/dev/null | \
+    jq -r '.version // empty' 2>/dev/null || echo "")
+  BIFROST_VERSION="${LATEST_VERSION:-v1.6.3}"
+  BIFROST_URL="https://downloads.getmaxim.ai/bifrost/${BIFROST_VERSION}/darwin/arm64/bifrost-http"
 
-  DOWNLOAD_URL="${LLMROUTER_REPO}/releases/download/${LLMROUTER_TAG}/llm-router-darwin-arm64"
+  log_info "Version: ${BIFROST_VERSION}"
+  log_info "Downloading from ${BIFROST_URL}..."
 
-  log_info "Downloading LLMRouter ${LLMROUTER_TAG} from ${DOWNLOAD_URL}..."
-  if curl -fSL -o "$LLMROUTER_BIN" "$DOWNLOAD_URL" 2>/dev/null; then
-    chmod +x "$LLMROUTER_BIN"
-    log_ok "LLMRouter downloaded and installed"
+  if download_with_retry "$BIFROST_URL" "$BIFROST_BIN" 3; then
+    chmod +x "$BIFROST_BIN"
+    log_ok "Bifrost downloaded and installed"
   else
-    log_warn "Could not download pre-built binary."
-    log_step "Attempting to build LLMRouter from source"
-
-    if check_cmd go; then
-      log_info "Building with Go..."
-      BUILD_DIR=$(mktemp -d)
-      if git clone --depth 1 "${LLMROUTER_REPO}.git" "$BUILD_DIR" 2>/dev/null && \
-         (cd "$BUILD_DIR" && go build -o "$LLMROUTER_BIN" .); then
-        chmod +x "$LLMROUTER_BIN"
-        log_ok "LLMRouter built from source"
-      else
-        log_error "Build failed."
-        log_error "Set LLMROUTER_REPO to a reachable repository, e.g.:"
-        log_error "  LLMROUTER_REPO=https://github.com/<org>/llm-router $0"
-        log_error "Or install the binary manually to: ${LLMROUTER_BIN}"
-        rm -rf "$BUILD_DIR"
-        exit 1
-      fi
-      rm -rf "$BUILD_DIR"
-    else
-      log_error "Go is not installed and no pre-built binary is available."
-      log_error "Either: brew install go   (then re-run this script)"
-      log_error "Or install the llm-router binary manually to: ${LLMROUTER_BIN}"
-      exit 1
-    fi
+    log_error "Failed to download Bifrost binary."
+    log_error "Try downloading manually from https://github.com/maximhq/bifrost"
+    exit 1
   fi
 fi
 
-log_header "LLMRouter installation complete"
-log_info "Binary: ${LLMROUTER_BIN}"
-log_info "Run scripts/configure_llmrouter.sh to set up routing"
+log_step "Writing Bifrost configuration"
+
+cat > "${BIFROST_DIR}/config.json" <<- CONFIG
+{
+  "\$schema": "https://www.getbifrost.ai/schema",
+  "providers": {
+    "lm-studio": {
+      "keys": [
+        {
+          "name": "local-lm-studio",
+          "value": "not-needed",
+          "models": ["*"],
+          "weight": 1.0
+        }
+      ],
+      "network_config": {
+        "base_url": "http://127.0.0.1:1234/v1",
+        "default_request_timeout_in_seconds": 120
+      },
+      "custom_provider_config": {
+        "base_provider_type": "openai",
+        "allowed_requests": {
+          "chat_completion": true,
+          "chat_completion_stream": true
+        }
+      }
+    }
+  },
+  "config_store": {
+    "enabled": false
+  }
+}
+CONFIG
+
+log_ok "Configuration written to ${BIFROST_DIR}/config.json"
+
+log_header "Bifrost installation complete"
+log_info "Binary: ${BIFROST_BIN}"
+log_info "Config: ${BIFROST_DIR}/config.json"
+log_info ""
+log_info "Bifrost will serve all models from LM Studio (port 1234) through"
+log_info "a single OpenAI-compatible endpoint."
+log_info ""
+log_info "Run scripts/configure_llmrouter.sh or start manually:"
+log_info "  ${BIFROST_BIN} --app-dir ${BIFROST_DIR} --port 6666 --host 127.0.0.1"

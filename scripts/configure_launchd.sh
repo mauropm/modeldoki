@@ -10,7 +10,8 @@ check_macos_version
 check_apple_silicon
 
 OPENWEBUI_DIR="${HOME}/.modeldoki/open-webui"
-LLMROUTER_DIR="${HOME}/.modeldoki/llmrouter"
+BIFROST_DIR="${HOME}/.modeldoki/bifrost"
+BIFROST_BIN="${BIFROST_DIR}/bifrost-http"
 OPENWEBUI_ENV="${CONFIGS_DIR}/openwebui.env"
 
 mkdir -p "${HOME}/Library/LaunchAgents" "${LAUNCHD_DIR}"
@@ -87,30 +88,32 @@ fi
 
 install_launchd_service "openwebui" "$OPENWEBUI_PLIST" "${HOME}/Library/LaunchAgents/com.modeldoki.openwebui.plist"
 
-# ─── LLMRouter launchd service ────────────────────────────────────────────────
-log_step "Installing LLMRouter launchd service"
+# ─── Bifrost launchd service ───────────────────────────────────────────────────
+log_step "Installing Bifrost launchd service"
 
-LLMROUTER_PLIST="${LAUNCHD_DIR}/com.modeldoki.llmrouter.plist"
+BIFROST_PLIST="${LAUNCHD_DIR}/com.modeldoki.llmrouter.plist"
 
-cat > "$LLMROUTER_PLIST" <<- PLIST
+cat > "$BIFROST_PLIST" <<- PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.modeldoki.llmrouter</string>
+    <string>com.modeldoki.bifrost</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${LLMROUTER_DIR}/llm-router</string>
-        <string>--config</string>
-        <string>${LLMROUTER_DIR}/config.yaml</string>
+        <string>${BIFROST_BIN}</string>
+        <string>--app-dir</string>
+        <string>${BIFROST_DIR}</string>
+        <string>--port</string>
+        <string>6666</string>
+        <string>--host</string>
+        <string>127.0.0.1</string>
     </array>
-    <key>WorkingDirectory</key>
-    <string>${LLMROUTER_DIR}</string>
     <key>StandardOutPath</key>
-    <string>${LOGS_DIR}/llmrouter.stdout.log</string>
+    <string>${LOGS_DIR}/bifrost.stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>${LOGS_DIR}/llmrouter.stderr.log</string>
+    <string>${LOGS_DIR}/bifrost.stderr.log</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
@@ -121,18 +124,18 @@ cat > "$LLMROUTER_PLIST" <<- PLIST
 </plist>
 PLIST
 
-if plutil -lint "$LLMROUTER_PLIST" >/dev/null 2>&1; then
-  log_ok "LLMRouter plist is valid"
+if plutil -lint "$BIFROST_PLIST" >/dev/null 2>&1; then
+  log_ok "Bifrost plist is valid"
 else
-  log_error "LLMRouter plist failed validation: ${LLMROUTER_PLIST}"
+  log_error "Bifrost plist failed validation: ${BIFROST_PLIST}"
   exit 1
 fi
 
-install_launchd_service "llmrouter" "$LLMROUTER_PLIST" "${HOME}/Library/LaunchAgents/com.modeldoki.llmrouter.plist"
+install_launchd_service "bifrost" "$BIFROST_PLIST" "${HOME}/Library/LaunchAgents/com.modeldoki.bifrost.plist"
 
 log_info "Generated plists (in project):"
 log_info "  Open WebUI:  ${OPENWEBUI_PLIST}"
-log_info "  LLMRouter:   ${LLMROUTER_PLIST}"
+log_info "  Bifrost:     ${BIFROST_PLIST}"
 
 log_header "launchd service installation complete"
 log_info "Services will auto-start on login"

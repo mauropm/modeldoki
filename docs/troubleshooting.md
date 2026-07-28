@@ -38,17 +38,17 @@ ls ~/.modeldoki/open-webui/.venv/bin/python
 ./scripts/install_openwebui.sh
 ```
 
-### LLMRouter not responding
+### Bifrost not responding
 
 ```bash
 # Check binary exists
-ls -la ~/.modeldoki/llmrouter/llm-router
+ls -la ~/.modeldoki/bifrost/bifrost-http
 
 # Check config
-ls -la configs/llmrouter.yaml
+ls -la ~/.modeldoki/bifrost/config.json
 
 # Check logs
-tail -f logs/llmrouter.stderr.log
+tail -f logs/bifrost.stderr.log
 ```
 
 ### Port already in use

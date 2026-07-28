@@ -16,9 +16,8 @@ graph TB
         OC[OpenCode<br/>OpenAI-compatible]
     end
 
-    subgraph Router["LLMRouter<br/>localhost:6666"]
-        LR[Routing Engine]
-        DB[Dashboard]
+    subgraph Gateway["Bifrost AI Gateway<br/>localhost:6666"]
+        BG[Bifrost Gateway]
     end
 
     subgraph LMStudio["LM Studio — localhost:1234"]
@@ -27,10 +26,9 @@ graph TB
     end
 
     OW -->|Chat requests| CHAT
-    OC -->|/v1/chat/completions| LR
-    LR -->|model: qwen2.5-7b-instruct| CHAT
-    LR -->|model: qwen2.5-coder-7b-instruct| CODER
-    DB -->|Admin UI| LR
+    OC -->|/v1/chat/completions| BG
+    BG -->|forward any model| CHAT
+    BG -->|forward any model| CODER
 ```
 
 ## Component Descriptions
@@ -48,37 +46,36 @@ graph TB
 ### Open WebUI
 
 - Feature-rich chat interface
-- Connects to the LM Studio endpoint (port 1234)
+- Connects directly to the LM Studio endpoint (port 1234)
 - Runs natively via Python (uv/pip) — no Docker required
 - Provides: conversation management, markdown rendering, code highlighting
 
-### LLMRouter
+### Bifrost AI Gateway
 
-- Smart request router in front of LM Studio
-- Exposes an OpenAI-compatible API at port 6666
-- Routes based on model name prefix:
-  - `qwen2.5-7b-instruct*` → chat model
-  - `qwen2.5-coder-7b-instruct*` → coder model
-- Provides an admin dashboard at port 6666
+- High-performance AI gateway powered by [Bifrost](https://github.com/maximhq/bifrost)
+- Exposes an OpenAI-compatible API at port 6666 with a web UI dashboard
+- Routes all requests to LM Studio (port 1234) with automatic failover,
+  load balancing, and semantic caching
+- Web dashboard at `http://localhost:6666/` for real-time monitoring
 
 ### OpenCode
 
 - CLI coding assistant
-- Connects to the routed endpoint at port 6666 (or directly to LM Studio
+- Connects to the Bifrost endpoint at port 6666 (or directly to LM Studio
   at port 1234) with model `qwen2.5-coder-7b-instruct`
 - Uses the OpenAI-compatible `/v1/chat/completions` API
 
 ## Data Flow
 
 1. **Chat flow**: Browser → Open WebUI (3333) → LM Studio (1234) → Qwen 2.5 7B
-2. **Coding flow**: OpenCode → LLMRouter (6666) → LM Studio (1234) → Qwen 2.5-Coder 7B
-3. **Routed flow**: Any client → LLMRouter (6666) → routing rules → LM Studio (1234) → selected model
+2. **Coding flow**: OpenCode → Bifrost (6666) → LM Studio (1234) → Qwen 2.5-Coder 7B
+3. **Gateway flow**: Any client → Bifrost (6666) → LM Studio (1234) → selected model
 
 ## Process Management
 
 All services (except LM Studio) are managed by `launchd`:
 
 - `com.modeldoki.openwebui` — Open WebUI server
-- `com.modeldoki.llmrouter` — LLMRouter server
+- `com.modeldoki.bifrost` — Bifrost gateway
 
 LM Studio is managed via its GUI or CLI (`~/.lmstudio/bin/lms`).
