@@ -27,7 +27,7 @@ its `model` field (`qwen2.5-7b-instruct` or `qwen2.5-coder-7b-instruct`).
 ## Quick Start
 
 ```bash
-git clone https://github.com/anomalyco/modeldoki.git
+git clone https://github.com/mauropm/modeldoki
 cd modeldoki
 
 ./scripts/install_homebrew.sh
@@ -70,7 +70,7 @@ Each script is **idempotent** — running them multiple times is safe.
 3. **`install_openwebui.sh`** — Installs Open WebUI in a Python virtual environment (no Docker)
 4. **`install_llmrouter.sh`** — Installs LLMRouter binary for request routing
 5. **`install_models.sh`** — Downloads Qwen 2.5 7B Instruct and Qwen 2.5-Coder 7B Instruct (Q4_K_M)
-6. **`configure_lmstudio.sh`** — Configures LM Studio endpoints and model loading
+6. **`configure_lmstudio.sh`** — Imports/loads models and starts the LM Studio server (port 1234)
 7. **`configure_openwebui.sh`** — Configures Open WebUI to use LM Studio
 8. **`configure_llmrouter.sh`** — Sets up routing rules
 9. **`configure_launchd.sh`** — Creates launchd plists for auto-start on login

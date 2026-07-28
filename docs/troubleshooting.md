@@ -84,9 +84,13 @@ ping -c 3 huggingface.co
 # Check disk space
 df -h /
 
-# Manual download URL
-# Visit https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF
-# Download Q4_K_M version to models/
+# Manual download
+# Visit https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF and
+# https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF
+# Download the Q4_K_M files into models/ keeping their original names:
+#   qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf   (chat is split — BOTH shards required)
+#   qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf
+#   qwen2.5-coder-7b-instruct-q4_k_m.gguf            (coder is a single file)
 ```
 
 ### Slow inference
