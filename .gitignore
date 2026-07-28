@@ -1,0 +1,59 @@
+# modeldoki - gitignore
+
+# OS
+.DS_Store
+*.swp
+*.swo
+*~
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Logs
+logs/
+*.log
+
+# Config overrides
+configs/local/
+*.local.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+
+# Node
+node_modules/
+.npm/
+
+# Model files
+models/*.gguf
+models/*.safetensors
+!models/.gitkeep
+
+# Runtime
+*.pid
+*.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Homebrew
+*.brew
+
+# launchd overrides
+configs/launchd/local/

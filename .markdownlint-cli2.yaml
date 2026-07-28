@@ -1,0 +1,11 @@
+# modeldoki markdownlint configuration
+
+config:
+  MD013: false  # Line length
+  MD033: false  # Inline HTML (needed for Mermaid)
+
+globs:
+  - "**/*.md"
+
+ignores:
+  - "**/node_modules/**"
