@@ -91,10 +91,12 @@ download_model() {
   log_step "Resolving files for ${name} (${quant})"
 
   local -a files
-  files=( ${(f)"$(discover_model_files "$name" "$repo" "$quant")"} )
+  # `|| true` inside the substitution: without it, set -e would abort here
+  # when discovery fails, before the fallback gets a chance to run.
+  files=( ${(f)"$(discover_model_files "$name" "$repo" "$quant" || true)"} )
   if (( ${#files[@]} == 0 )); then
     log_info "Discovery failed, using fallback file list"
-    files=( ${(f)"$(fallback_model_files "$name" "$quant")"} )
+    files=( ${(f)"$(fallback_model_files "$name" "$quant" || true)"} )
   fi
 
   if (( ${#files[@]} == 0 )); then

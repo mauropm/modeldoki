@@ -55,5 +55,6 @@ models/*.safetensors
 # Homebrew
 *.brew
 
-# launchd overrides
+# launchd overrides and generated plists (contain user-specific paths)
 configs/launchd/local/
+configs/launchd/*.plist

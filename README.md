@@ -11,14 +11,18 @@ Browser                    Developer Tools (OpenCode, etc.)
     │                              │
     ▼                              ▼
 Open WebUI                 LLMRouter (localhost:6666)
-:3333                           │
-    │                    ┌───────┴───────┐
-    ▼                    ▼               ▼
-LM Studio Chat     LM Studio Chat   LM Studio Coder
-:1234               :1234             :1337
-    │                    │               │
-Qwen 2.5 7B          Qwen 2.5 7B    Qwen 2.5-Coder 7B
+:3333                           │ routes by model name
+    │                           ▼
+    └──────────────────► LM Studio (localhost:1234)
+                              │ dispatches on the request's "model" field
+                         ┌────┴─────┐
+                         ▼          ▼
+                    Qwen 2.5 7B  Qwen 2.5-Coder 7B
 ```
+
+One LM Studio instance serves a single OpenAI-compatible port (1234). Both
+models are loaded at once, and the server dispatches each request based on
+its `model` field (`qwen2.5-7b-instruct` or `qwen2.5-coder-7b-instruct`).
 
 ## Quick Start
 
@@ -30,7 +34,7 @@ cd modeldoki
 ./scripts/install_lmstudio.sh
 ./scripts/install_openwebui.sh
 ./scripts/install_llmrouter.sh
-./scripts/install_models.sh        # Downloads Qwen 2.5 models (~8 GB total)
+./scripts/install_models.sh        # Downloads Qwen 2.5 models (~9.5 GB total)
 
 ./scripts/configure_lmstudio.sh
 ./scripts/configure_openwebui.sh
@@ -45,7 +49,8 @@ Once running:
 | Service | URL | Purpose |
 |---------|-----|---------|
 | Open WebUI | http://localhost:3333 | Chat interface with Qwen 2.5 7B |
-| Coding API | http://localhost:1337/v1 | OpenAI-compatible (Qwen 2.5-Coder) |
+| LM Studio API | http://localhost:1234/v1 | OpenAI-compatible, both models |
+| Coding API | http://localhost:6666/v1 | Routed via LLMRouter (Qwen 2.5-Coder) |
 | LLMRouter | http://localhost:6666 | Admin dashboard & request routing |
 
 ## Requirements
@@ -84,16 +89,19 @@ Each script is **idempotent** — running them multiple times is safe.
 
 ## OpenCode Configuration
 
-To use OpenCode with the coding endpoint, save this to `~/.config/opencode.json`:
+To use OpenCode with the coding endpoint (routed via LLMRouter), save this to `~/.config/opencode.json`:
 
 ```json
 {
   "provider": "openai",
-  "base_url": "http://localhost:1337/v1",
+  "base_url": "http://localhost:6666/v1",
   "api_key": "dummy",
   "model": "qwen2.5-coder-7b-instruct"
 }
 ```
+
+You can also point OpenCode directly at LM Studio with
+`"base_url": "http://localhost:1234/v1"` — the same model name works there too.
 
 Test it:
 
@@ -113,10 +121,13 @@ LLMRouter at `localhost:6666` automatically routes requests:
 
 | Request Model | Routes To |
 |---------------|-----------|
-| `qwen2.5-7b-instruct*` | Qwen 2.5 7B (chat, port 1234) |
-| `qwen2.5-coder-7b-instruct*` | Qwen 2.5-Coder 7B (coding, port 1337) |
-| `*coder*` | Qwen 2.5-Coder 7B (coding, port 1337) |
-| Anything else | Qwen 2.5 7B (chat, port 1234, default) |
+| `qwen2.5-7b-instruct*` | Qwen 2.5 7B (chat, model on port 1234) |
+| `qwen2.5-coder-7b-instruct*` | Qwen 2.5-Coder 7B (coding, model on port 1234) |
+| `*coder*` | Qwen 2.5-Coder 7B (coding, model on port 1234) |
+| Anything else | Qwen 2.5 7B (chat, model on port 1234, default) |
+
+All upstreams share the LM Studio server on port 1234 — the router picks the
+model identifier, LM Studio picks the loaded model.
 
 ## Memory Recommendations
 

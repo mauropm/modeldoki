@@ -1,6 +1,6 @@
 {
   "provider": "openai",
-  "base_url": "http://localhost:1337/v1",
+  "base_url": "http://localhost:6666/v1",
   "api_key": "dummy",
   "model": "qwen2.5-coder-7b-instruct"
 }

@@ -21,56 +21,64 @@ graph TB
         DB[Dashboard]
     end
 
-    subgraph LMStudio["LM Studio"]
-        CHAT[Qwen 2.5 7B Instruct<br/>Port 1234]
-        CODER[Qwen 2.5-Coder 7B Instruct<br/>Port 1337]
+    subgraph LMStudio["LM Studio — localhost:1234"]
+        CHAT[Qwen 2.5 7B Instruct<br/>model: qwen2.5-7b-instruct]
+        CODER[Qwen 2.5-Coder 7B Instruct<br/>model: qwen2.5-coder-7b-instruct]
     end
 
     OW -->|Chat requests| CHAT
-    OC -->|/v1/chat/completions| CODER
-    LR -->|Route chat| CHAT
-    LR -->|Route code| CODER
+    OC -->|/v1/chat/completions| LR
+    LR -->|model: qwen2.5-7b-instruct| CHAT
+    LR -->|model: qwen2.5-coder-7b-instruct| CODER
     DB -->|Admin UI| LR
 ```
 
 ## Component Descriptions
 
 ### LM Studio
+
 - Native macOS application for running local LLMs
-- Exposes two OpenAI-compatible endpoints:
-  - Port 1234: Qwen 2.5 7B Instruct (chat/general)
-  - Port 1337: Qwen 2.5-Coder 7B Instruct (coding)
+- Exposes **one** OpenAI-compatible endpoint on port 1234
+- Both models are loaded simultaneously; the server dispatches each request
+  by its `model` field:
+  - `qwen2.5-7b-instruct` → Qwen 2.5 7B Instruct (chat/general)
+  - `qwen2.5-coder-7b-instruct` → Qwen 2.5-Coder 7B Instruct (coding)
 - GPU acceleration via Metal on Apple Silicon
 
 ### Open WebUI
+
 - Feature-rich chat interface
-- Connects to LM Studio chat endpoint (port 1234)
+- Connects to the LM Studio endpoint (port 1234)
 - Runs natively via Python (uv/pip) — no Docker required
 - Provides: conversation management, markdown rendering, code highlighting
 
 ### LLMRouter
-- Smart request router between model endpoints
-- Exposes OpenAI-compatible API at port 6666
+
+- Smart request router in front of LM Studio
+- Exposes an OpenAI-compatible API at port 6666
 - Routes based on model name prefix:
-  - `qwen2.5-7b-instruct*` → chat port 1234
-  - `qwen2.5-coder-7b-instruct*` → coder port 1337
-- Provides admin dashboard at port 6666
+  - `qwen2.5-7b-instruct*` → chat model
+  - `qwen2.5-coder-7b-instruct*` → coder model
+- Provides an admin dashboard at port 6666
 
 ### OpenCode
+
 - CLI coding assistant
-- Connects directly to LM Studio coder endpoint at port 1337
-- Uses OpenAI-compatible `/v1/chat/completions` API
+- Connects to the routed endpoint at port 6666 (or directly to LM Studio
+  at port 1234) with model `qwen2.5-coder-7b-instruct`
+- Uses the OpenAI-compatible `/v1/chat/completions` API
 
 ## Data Flow
 
-1. **Chat flow**: Browser → Open WebUI (3333) → LM Studio Chat (1234) → Qwen 2.5 7B
-2. **Coding flow**: OpenCode → LM Studio Coder (1337) → Qwen 2.5-Coder 7B
-3. **Routed flow**: Any client → LLMRouter (6666) → routing rules → appropriate model
+1. **Chat flow**: Browser → Open WebUI (3333) → LM Studio (1234) → Qwen 2.5 7B
+2. **Coding flow**: OpenCode → LLMRouter (6666) → LM Studio (1234) → Qwen 2.5-Coder 7B
+3. **Routed flow**: Any client → LLMRouter (6666) → routing rules → LM Studio (1234) → selected model
 
 ## Process Management
 
 All services (except LM Studio) are managed by `launchd`:
+
 - `com.modeldoki.openwebui` — Open WebUI server
 - `com.modeldoki.llmrouter` — LLMRouter server
 
-LM Studio is managed via its GUI or CLI (`~/.lmstudio/bin/lmstudio`).
+LM Studio is managed via its GUI or CLI (`~/.lmstudio/bin/lms`).

@@ -18,8 +18,11 @@ ls -la /Applications/LM\ Studio.app
 # Try launching manually
 open -a "LM Studio"
 
+# Check the CLI is available
+~/.lmstudio/bin/lms server status
+
 # Check logs
-ls -la ~/.lmstudio/logs/
+ls -la ~/.lmstudio/server-logs/
 ```
 
 ### Open WebUI won't start
@@ -52,11 +55,25 @@ tail -f logs/llmrouter.stderr.log
 
 ```bash
 # Find what's using a port
-lsof -i :3333
+lsof -i :1234
 
 # Kill the process
-lsof -ti :3333 | xargs kill -TERM
+lsof -ti :1234 | xargs kill -TERM
 ```
+
+### A model name is not recognized
+
+Both models are served by LM Studio on the single port 1234, dispatched by
+the request's `model` field. Check which models are actually loaded:
+
+```bash
+~/.lmstudio/bin/lms ps
+# Expected identifiers:
+#   qwen2.5-7b-instruct
+#   qwen2.5-coder-7b-instruct
+```
+
+If one is missing, run `./scripts/configure_lmstudio.sh` to import and load it.
 
 ### Models won't download
 

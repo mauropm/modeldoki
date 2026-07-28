@@ -1,10 +1,11 @@
 #!/usr/bin/env zsh
 #
-# Test the coding endpoint (Qwen 2.5-Coder 7B Instruct via LM Studio on port 1337)
+# Test the coding endpoint (Qwen 2.5-Coder 7B Instruct, routed via LLMRouter).
+# Set API_URL=http://localhost:1234/v1/chat/completions to hit LM Studio directly.
 #
 set -euo pipefail
 
-API_URL="${API_URL:-http://localhost:1337/v1/chat/completions}"
+API_URL="${API_URL:-http://localhost:6666/v1/chat/completions}"
 MODEL="${MODEL:-qwen2.5-coder-7b-instruct}"
 
 curl -s "$API_URL" \
