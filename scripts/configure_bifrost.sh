@@ -15,7 +15,7 @@ BIFROST_CONFIG="${BIFROST_DIR}/config.json"
 
 if [[ ! -f "$BIFROST_CONFIG" ]]; then
   log_warn "Bifrost config not found at ${BIFROST_CONFIG}"
-  log_info "Run scripts/install_llmrouter.sh first"
+  log_info "Run scripts/install_bifrost.sh first"
   exit 1
 fi
 

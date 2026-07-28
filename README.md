@@ -33,12 +33,12 @@ cd modeldoki
 ./scripts/install_homebrew.sh
 ./scripts/install_lmstudio.sh
 ./scripts/install_openwebui.sh
-./scripts/install_llmrouter.sh
+./scripts/install_bifrost.sh
 ./scripts/install_models.sh        # Downloads Qwen 2.5 models (~9.5 GB total)
 
 ./scripts/configure_lmstudio.sh
 ./scripts/configure_openwebui.sh
-./scripts/configure_llmrouter.sh
+./scripts/configure_bifrost.sh
 ./scripts/configure_launchd.sh     # Installs launchd services
 
 ./scripts/start_all.sh
@@ -68,11 +68,11 @@ Each script is **idempotent** — running them multiple times is safe.
 1. **`install_homebrew.sh`** — Installs Homebrew and required packages (python, uv, node, git, jq, wget)
 2. **`install_lmstudio.sh`** — Installs LM Studio via Homebrew cask or direct download
 3. **`install_openwebui.sh`** — Installs Open WebUI in a Python virtual environment (no Docker)
-4. **`install_llmrouter.sh`** — Installs Bifrost AI gateway
+4. **`install_bifrost.sh`** — Installs Bifrost AI gateway
 5. **`install_models.sh`** — Downloads Qwen 2.5 7B Instruct and Qwen 2.5-Coder 7B Instruct (Q4_K_M)
 6. **`configure_lmstudio.sh`** — Imports/loads models and starts the LM Studio server (port 1234)
 7. **`configure_openwebui.sh`** — Configures Open WebUI to use LM Studio
-8. **`configure_llmrouter.sh`** — Verifies Bifrost configuration
+8. **`configure_bifrost.sh`** — Verifies Bifrost configuration
 9. **`configure_launchd.sh`** — Creates launchd plists for auto-start on login
 
 ## Utility Scripts

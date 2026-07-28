@@ -140,11 +140,11 @@ Then reinstall step by step:
 ./scripts/install_homebrew.sh
 ./scripts/install_lmstudio.sh
 ./scripts/install_openwebui.sh
-./scripts/install_llmrouter.sh
+./scripts/install_bifrost.sh
 ./scripts/install_models.sh
 ./scripts/configure_lmstudio.sh
 ./scripts/configure_openwebui.sh
-./scripts/configure_llmrouter.sh
+./scripts/configure_bifrost.sh
 ./scripts/configure_launchd.sh
 ./scripts/start_all.sh
 ```
