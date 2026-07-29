@@ -4,27 +4,23 @@
 
 | Port | Service | Endpoint | Description |
 |------|---------|----------|-------------|
-| 1234 | LM Studio | `/v1/chat/completions` | Serves **both** models (see note below) |
+| 1234 | LM Studio | `/v1/chat/completions` | Serves Qwen 3.5 9B |
 | 3333 | Open WebUI | `http://localhost:3333` | Web chat interface |
 | 6666 | Bifrost | `http://localhost:6666` | AI gateway & routing (dashboard at `/`) |
 
-> **Why only one LM Studio port?** A single LM Studio instance runs one
-> OpenAI-compatible server on one port. Both models (chat and coder) are
-> loaded into that server, and it dispatches each request based on the
-> request's `model` field. There is no per-model port.
+> LM Studio runs a single OpenAI-compatible server on one port with
+> Qwen 3.5 9B loaded. The API accepts any `model` value — the server
+> always responds with the loaded model.
 
 ## API Endpoints
 
-### Chat or Coding (direct, via LM Studio)
+### Direct (via LM Studio)
 
 ```
 POST http://localhost:1234/v1/chat/completions
 ```
 
-OpenAI-compatible. The `model` field selects which loaded model answers:
-
-- `qwen2.5-7b-instruct` → Qwen 2.5 7B Instruct (chat)
-- `qwen2.5-coder-7b-instruct` → Qwen 2.5-Coder 7B Instruct (coding)
+OpenAI-compatible. Any `model` value reaches the loaded Qwen 3.5 9B.
 
 ### Bifrost Gateway (routed)
 
@@ -33,7 +29,7 @@ POST http://localhost:6666/v1/chat/completions
 ```
 
 Accepts any model name — Bifrost forwards the request to LM Studio (port 1234).
-Use either model name; unknown names fall back to LM Studio's default.
+The loaded Qwen 3.5 9B answers all requests.
 
 Bifrost also provides a web dashboard at `http://localhost:6666/`.
 
@@ -49,7 +45,7 @@ Common conflicts:
 
 - **Port 3333**: Another Open WebUI instance or web application
 - **Port 6666**: Another dashboard or web server
-- **Port 1234**: Another LM Studio or llama.cpp server instance
+- **Port 1234**: Another LM Studio instance
 
 To free a port:
 

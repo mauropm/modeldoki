@@ -30,7 +30,7 @@ if [[ -x "$BIFROST_BIN" ]]; then
 fi
 
 log_info "Bifrost will serve on http://localhost:6666"
-log_info "All models are routed to LM Studio (http://localhost:1234/v1)"
+log_info "Requests are forwarded to LM Studio — Qwen 3.5 9B (http://localhost:1234/v1)"
 log_info "Config file: ${BIFROST_CONFIG}"
 
 log_header "Bifrost configuration complete"

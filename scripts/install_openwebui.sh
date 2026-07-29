@@ -42,7 +42,7 @@ else
   log_ok "Open WebUI installed via uv"
 fi
 
-OPENWEBUI_VERSION=$(pip show open-webui 2>/dev/null | grep Version | cut -d' ' -f2)
+OPENWEBUI_VERSION=$(pip show open-webui 2>/dev/null | grep Version | cut -d' ' -f2 || true)
 log_ok "Open WebUI version: ${OPENWEBUI_VERSION:-unknown}"
 
 deactivate 2>/dev/null || true

@@ -2,7 +2,7 @@
 
 > macOS-first setup toolkit for a complete local LLM workstation. No Docker required.
 
-ModelDoki automates the installation and configuration of a local AI development environment on Apple Silicon Macs. It sets up LM Studio, Open WebUI, Bifrost (AI gateway), and downloads optimized models — all managed natively with `launchd`.
+ModelDoki automates the installation and configuration of a local AI development environment on Apple Silicon Macs. It sets up LM Studio, Open WebUI, Bifrost (AI gateway), and downloads an Apple Silicon–native MLX model — all managed natively with `launchd`.
 
 ## Architecture
 
@@ -14,15 +14,18 @@ Open WebUI                 Bifrost Gateway (localhost:6666)
 :3333                             │ forward to LM Studio
     │                             ▼
     └──────────────────► LM Studio (localhost:1234)
-                              │ dispatches on the request's "model" field
-                         ┌────┴─────┐
-                         ▼          ▼
-                    Qwen 2.5 7B  Qwen 2.5-Coder 7B
+                              │
+                              ▼
+                         Qwen 3.5 9B
 ```
 
-One LM Studio instance serves a single OpenAI-compatible port (1234). Both
-models are loaded at once, and the server dispatches each request based on
-its `model` field (`qwen2.5-7b-instruct` or `qwen2.5-coder-7b-instruct`).
+LM Studio serves Qwen 3.5 9B (MLX — Apple Silicon native) on a single
+OpenAI-compatible port (1234). The API accepts any `model` value — LM
+Studio always responds with the loaded Qwen 3.5 9B model.
+
+Thinking/reasoning is **disabled by default** in the model's chat template
+for faster inference. This can be re-enabled by editing the Jinja template
+at `~/.lmstudio/models/lmstudio-community/Qwen3.5-9B-MLX-4bit/chat_template.jinja`.
 
 ## Quick Start
 
@@ -30,26 +33,15 @@ its `model` field (`qwen2.5-7b-instruct` or `qwen2.5-coder-7b-instruct`).
 git clone https://github.com/mauropm/modeldoki
 cd modeldoki
 
-./scripts/install_homebrew.sh
-./scripts/install_lmstudio.sh
-./scripts/install_openwebui.sh
-./scripts/install_bifrost.sh
-./scripts/install_models.sh        # Downloads Qwen 2.5 models (~9.5 GB total)
-
-./scripts/configure_lmstudio.sh
-./scripts/configure_openwebui.sh
-./scripts/configure_bifrost.sh
-./scripts/configure_launchd.sh     # Installs launchd services
-
-./scripts/start_all.sh
+./scripts/install_all.sh   # Installs, configures, and starts everything
 ```
 
 Once running:
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| Open WebUI | http://localhost:3333 | Chat interface with Qwen 2.5 7B |
-| LM Studio API | http://localhost:1234/v1 | OpenAI-compatible, both models |
+| Open WebUI | http://localhost:3333 | Chat interface with Qwen 3.5 9B |
+| LM Studio API | http://localhost:1234/v1 | OpenAI-compatible (Qwen 3.5 9B MLX) |
 | Bifrost API | http://localhost:6666/v1 | AI gateway (forwards to LM Studio) |
 | Bifrost Dashboard | http://localhost:6666 | Web UI & monitoring |
 
@@ -65,21 +57,21 @@ Once running:
 
 Each script is **idempotent** — running them multiple times is safe.
 
+The quickest path is `./scripts/install_all.sh`, which runs every step below
+in order. Alternatively, run the individual scripts:
+
 1. **`install_homebrew.sh`** — Installs Homebrew and required packages (python, uv, node, git, jq, wget)
 2. **`install_lmstudio.sh`** — Installs LM Studio via Homebrew cask or direct download
 3. **`install_openwebui.sh`** — Installs Open WebUI in a Python virtual environment (no Docker)
-4. **`install_bifrost.sh`** — Installs Bifrost AI gateway
-5. **`install_models.sh`** — Downloads Qwen 2.5 7B Instruct and Qwen 2.5-Coder 7B Instruct (Q4_K_M)
-6. **`configure_lmstudio.sh`** — Imports/loads models and starts the LM Studio server (port 1234)
-7. **`configure_openwebui.sh`** — Configures Open WebUI to use LM Studio
-8. **`configure_bifrost.sh`** — Verifies Bifrost configuration
-9. **`configure_launchd.sh`** — Creates launchd plists for auto-start on login
+4. **`install_bifrost.sh`** — Installs Bifrost AI gateway binary
+5. **`install_models.sh`** — Checks LM Studio for existing models; if none, downloads **Qwen 3.5 9B MLX** (Apple Silicon native, ~6 GB) via `lms get`. Then configures all three services (LM Studio, Bifrost, Open WebUI).
+6. **`configure_launchd.sh`** — Creates launchd plists for auto-start on login
 
 ## Utility Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `start_all.sh` | Starts all services |
+| `start_all.sh` | Starts all services (via launchd or directly as fallback) |
 | `stop_all.sh` | Gracefully stops all services |
 | `restart_all.sh` | Restarts all services |
 | `status.sh` | Shows running processes, ports, memory, GPU |
@@ -96,7 +88,7 @@ To use OpenCode with the Bifrost gateway, save this to `~/.config/opencode.json`
   "provider": "openai",
   "base_url": "http://localhost:6666/v1",
   "api_key": "dummy",
-  "model": "qwen2.5-coder-7b-instruct"
+  "model": "qwen3.5-9b"
 }
 ```
 
@@ -115,30 +107,33 @@ Or with curl:
 ./examples/curl-coder.sh
 ```
 
-## Model Access
+## Model
+
+The model is Qwen 3.5 9B in **MLX format** — Apple's native machine learning
+framework for Apple Silicon. MLX models are stored directly in LM Studio's
+model directory (`~/.lmstudio/models/lmstudio-community/`) and are fully
+optimized for the M-series Neural Engine and GPU.
+
+The model is downloaded via `lms get qwen/qwen3.5-9b --mlx` (run
+automatically by `install_models.sh`).
+
+## Bifrost Gateway
 
 [Bifrost](https://github.com/maximhq/bifrost) at `localhost:6666` is a
 high-performance AI gateway that forwards all requests to LM Studio on
-port 1234. LM Studio dispatches each request based on its `model` field.
-Both models share the same endpoint — the `model` parameter selects:
-
-| Request Model | Selected Model |
-|---------------|----------------|
-| `qwen2.5-7b-instruct*` | Qwen 2.5 7B Instruct (chat) |
-| `qwen2.5-coder-7b-instruct*` | Qwen 2.5-Coder 7B Instruct (coding) |
-
-Bifrost also provides a web dashboard at `http://localhost:6666/` for
-monitoring and configuration.
+port 1234. It provides a web dashboard at `http://localhost:6666/` for
+monitoring and configuration. Any `model` value in the API request is
+accepted — the single loaded Qwen 3.5 9B handles everything.
 
 ## Memory Recommendations
 
-Running two 7B models simultaneously on 16 GB RAM requires careful memory management.
+Qwen 3.5 9B (MLX 4-bit) uses approximately **5–7 GB of RAM** when loaded. On a
+16 GB Mac this leaves limited headroom for other applications.
 
-- Close Chrome, Teams, Slack, Docker Desktop, and other memory-heavy apps before loading models
-- Aim for at least **6–8 GB free memory** before loading a 7B model
+- Close Chrome, Teams, Slack, Docker Desktop, and other memory-heavy apps before loading the model
+- Aim for at least **6–8 GB free memory** before loading
 - Monitor with `memory_pressure` or Activity Monitor
 - If swapping occurs, inference will be 10–100x slower
-- Start with one model at a time if memory pressure is high
 
 See [docs/memory.md](docs/memory.md) for detailed guidance.
 
@@ -150,7 +145,6 @@ modeldoki/
 ├── configs/           # Service configurations and launchd plists
 ├── docs/              # Architecture, memory, ports, troubleshooting
 ├── examples/          # curl examples and OpenCode config
-├── models/            # Downloaded GGUF models (gitignored)
 ├── logs/              # Service logs (gitignored)
 └── .github/           # CI, issue templates, PR template
 ```
@@ -169,9 +163,10 @@ You can optionally keep downloaded models and chat history.
 Docker adds overhead, consumes significant memory, and complicates GPU passthrough on macOS. Native processes with `launchd` are simpler and more performant.
 
 **Can I add more models?**  
-Yes. Place GGUF files in `models/`, load them in LM Studio, and they become
-available through the API automatically. Bifrost forwards any model name to LM
-Studio.
+Yes. Use `lms get <model-name> --mlx` to download additional MLX models, or
+use the LM Studio GUI to browse and install models. Any model loaded in LM
+Studio becomes available through the API automatically. Bifrost forwards any
+model name to LM Studio.
 
 **Can I change ports?**  
 Yes. Update `configs/openwebui.env` and the Bifrost config at

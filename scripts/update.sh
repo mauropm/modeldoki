@@ -33,12 +33,12 @@ fi
 # ─── 3. Check for newer model versions ──────────────────────────────────────
 log_step "Checking for newer model versions"
 
-for model_name in "qwen2.5-7b-instruct" "qwen2.5-coder-7b-instruct"; do
+for model_name in "qwen3.5-9b"; do
   model_file="$(resolve_model_file "$model_name" || true)"
   if [[ -n "$model_file" ]]; then
     size_mb=$(($(stat -f%z "$model_file" 2>/dev/null || stat -c%s "$model_file" 2>/dev/null) / 1048576))
     log_info "${model_name}: ${model_file##*/} (${size_mb} MB, existing)"
-    log_info "  Check https://huggingface.co/Qwen for newer versions"
+    log_info "  Check https://huggingface.co/bartowski/Qwen_Qwen3.5-9B-GGUF for newer versions"
   else
     log_warn "${model_name}: not downloaded"
     log_info "  Run scripts/install_models.sh to download"

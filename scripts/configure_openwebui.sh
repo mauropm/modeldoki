@@ -34,7 +34,7 @@ cat > "$OPENWEBUI_CONFIG" <<- CONFIG
   "port": ${OPENWEBUI_PORT:-3333},
   "openai_api_base_url": "${OPENAI_API_BASE_URL:-http://127.0.0.1:1234/v1}",
   "openai_api_key": "${OPENAI_API_KEY:-not-needed}",
-  "default_model": "${OPENWEBUI_DEFAULT_MODEL:-qwen2.5-7b-instruct}",
+  "default_model": "${OPENWEBUI_DEFAULT_MODEL:-qwen3.5-9b}",
   "log_level": "${LOG_LEVEL:-info}",
   "data_dir": "${OPENWEBUI_DIR}/data"
 }
@@ -46,7 +46,7 @@ log_ok "Configuration recorded at ${OPENWEBUI_CONFIG}"
 mkdir -p "${OPENWEBUI_DIR}/data"
 
 log_info "Open WebUI will connect to LM Studio at ${OPENAI_API_BASE_URL:-http://127.0.0.1:1234/v1}"
-log_info "Chat model: ${OPENWEBUI_DEFAULT_MODEL:-qwen2.5-7b-instruct}"
+log_info "Default model: ${OPENWEBUI_DEFAULT_MODEL:-qwen3.5-9b}"
 
 log_header "Open WebUI configuration complete"
 log_info "Open WebUI will be available at http://${OPENWEBUI_HOST:-127.0.0.1}:${OPENWEBUI_PORT:-3333}"

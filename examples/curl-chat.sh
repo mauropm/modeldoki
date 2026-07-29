@@ -1,11 +1,11 @@
 #!/usr/bin/env zsh
 #
-# Test the chat endpoint (Qwen 2.5 7B Instruct via LM Studio)
+# Test the LM Studio endpoint (Qwen 3.5 9B)
 #
 set -euo pipefail
 
 API_URL="${API_URL:-http://localhost:1234/v1/chat/completions}"
-MODEL="${MODEL:-qwen2.5-7b-instruct}"
+MODEL="${MODEL:-qwen3.5-9b}"
 
 curl -s "$API_URL" \
   -H "Content-Type: application/json" \

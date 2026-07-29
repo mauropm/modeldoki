@@ -89,7 +89,7 @@ if [[ -d "$OPENWEBUI_DIR" ]]; then
   log_ok "Open WebUI directory exists"
   if [[ -f "${OPENWEBUI_DIR}/.venv/bin/python" ]]; then
     log_ok "Open WebUI virtual environment exists"
-    OPENWEBUI_VERSION=$("${OPENWEBUI_DIR}/.venv/bin/pip" show open-webui 2>/dev/null | grep Version | cut -d' ' -f2)
+    OPENWEBUI_VERSION=$("${OPENWEBUI_DIR}/.venv/bin/pip" show open-webui 2>/dev/null | grep Version | cut -d' ' -f2 || true)
     log_ok "Open WebUI version: ${OPENWEBUI_VERSION:-unknown}"
   fi
 else

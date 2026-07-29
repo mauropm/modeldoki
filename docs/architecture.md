@@ -21,14 +21,12 @@ graph TB
     end
 
     subgraph LMStudio["LM Studio — localhost:1234"]
-        CHAT[Qwen 2.5 7B Instruct<br/>model: qwen2.5-7b-instruct]
-        CODER[Qwen 2.5-Coder 7B Instruct<br/>model: qwen2.5-coder-7b-instruct]
+        MODEL[Qwen 3.5 9B<br/>model: qwen3.5-9b]
     end
 
-    OW -->|Chat requests| CHAT
+    OW -->|Chat requests| MODEL
     OC -->|/v1/chat/completions| BG
-    BG -->|forward any model| CHAT
-    BG -->|forward any model| CODER
+    BG -->|forward any model| MODEL
 ```
 
 ## Component Descriptions
@@ -37,11 +35,9 @@ graph TB
 
 - Native macOS application for running local LLMs
 - Exposes **one** OpenAI-compatible endpoint on port 1234
-- Both models are loaded simultaneously; the server dispatches each request
-  by its `model` field:
-  - `qwen2.5-7b-instruct` → Qwen 2.5 7B Instruct (chat/general)
-  - `qwen2.5-coder-7b-instruct` → Qwen 2.5-Coder 7B Instruct (coding)
-- GPU acceleration via Metal on Apple Silicon
+- Loads a single model: Qwen 3.5 9B MLX (identifier `qwen3.5-9b`)
+- MLX format is Apple Silicon native — optimized for M-series Neural Engine and GPU
+- The API accepts any `model` value — the loaded model answers all requests
 
 ### Open WebUI
 
@@ -62,14 +58,14 @@ graph TB
 
 - CLI coding assistant
 - Connects to the Bifrost endpoint at port 6666 (or directly to LM Studio
-  at port 1234) with model `qwen2.5-coder-7b-instruct`
+  at port 1234) with model `qwen3.5-9b`
 - Uses the OpenAI-compatible `/v1/chat/completions` API
 
 ## Data Flow
 
-1. **Chat flow**: Browser → Open WebUI (3333) → LM Studio (1234) → Qwen 2.5 7B
-2. **Coding flow**: OpenCode → Bifrost (6666) → LM Studio (1234) → Qwen 2.5-Coder 7B
-3. **Gateway flow**: Any client → Bifrost (6666) → LM Studio (1234) → selected model
+1. **Chat/UI flow**: Browser → Open WebUI (3333) → LM Studio (1234) → Qwen 3.5 9B
+2. **Coding flow**: OpenCode → Bifrost (6666) → LM Studio (1234) → Qwen 3.5 9B
+3. **Gateway flow**: Any client → Bifrost (6666) → LM Studio (1234) → Qwen 3.5 9B
 
 ## Process Management
 

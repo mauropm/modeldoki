@@ -23,29 +23,46 @@ if ! lms_available; then
   exit 1
 fi
 
-# ─── Import and load models ────────────────────────────────────────────────
-# One LM Studio instance serves ONE server port. Both models are loaded into
-# the same server; the API dispatches requests by the "model" field, using
-# the identifiers assigned below.
+# ─── Switch to headless mode ───────────────────────────────────────────────
+# If the LM Studio GUI app is open it can block CLI operations; shut it
+# down so the headless daemon handles everything.
+ensure_headless_lmstudio
 
-log_step "Importing and loading models"
+# ─── Import and load the model ─────────────────────────────────────────────
+log_step "Importing and loading Qwen 3.5 9B"
 
-chat_file="$(resolve_model_file "qwen2.5-7b-instruct" || true)"
-coder_file="$(resolve_model_file "qwen2.5-coder-7b-instruct" || true)"
+model_file="$(resolve_model_file "qwen3.5-9b" || true)"
 
-if [[ -n "$chat_file" ]]; then
-  lms_ensure_model_loaded "$chat_file" "qwen2.5-7b-instruct" 32768 || true
+if [[ -n "$model_file" ]]; then
+  lms_ensure_model_loaded "$model_file" "qwen3.5-9b" 32768 || true
 else
-  log_warn "Chat model not found in ${MODELS_DIR} — run scripts/install_models.sh"
+  # No local GGUF — check whether the model is already known to LM Studio
+  # (e.g. downloaded via `lms get` or imported previously).
+  log_info "No local GGUF in ${MODELS_DIR}, checking LM Studio model index..."
+  lms_ensure_model_loaded "" "qwen3.5-9b" 32768 || \
+    log_warn "Qwen 3.5 9B not found — run scripts/install_models.sh or lms get"
 fi
 
-if [[ -n "$coder_file" ]]; then
-  lms_ensure_model_loaded "$coder_file" "qwen2.5-coder-7b-instruct" 32768 || true
+# ─── Disable thinking for faster inference ─────────────────────────────────
+# Qwen 3.5 9B enables thinking/reasoning by default, which adds significant
+# latency. Inject the disable override into the model's chat template.
+log_step "Disabling thinking in Qwen 3.5 9B chat template"
+
+MODEL_TEMPLATE=$(find "${HOME}/.lmstudio/models" -path "*/Qwen*3.5*9B*/chat_template.jinja" 2>/dev/null | head -1)
+if [[ -z "$MODEL_TEMPLATE" ]]; then
+  log_warn "Qwen model chat template not found — thinking may still be enabled"
+elif grep -q "enable_thinking = false" "$MODEL_TEMPLATE" 2>/dev/null; then
+  log_ok "Thinking already disabled"
 else
-  log_warn "Coder model not found in ${MODELS_DIR} — run scripts/install_models.sh"
+  # Prepend the override line to the Jinja template.
+  { echo '{%- set enable_thinking = false %}'; cat "$MODEL_TEMPLATE"; } > "${MODEL_TEMPLATE}.tmp" && \
+    mv "${MODEL_TEMPLATE}.tmp" "$MODEL_TEMPLATE" && \
+    log_ok "Thinking disabled in $(basename "$(dirname "$MODEL_TEMPLATE")")" || \
+    log_warn "Could not patch chat template"
 fi
 
 # ─── Start the local server ────────────────────────────────────────────────
+# (ensure_headless_lmstudio already ran above — the server is started here.)
 log_step "Starting LM Studio server on port ${LM_STUDIO_PORT}"
 
 if port_in_use "$LM_STUDIO_PORT"; then
@@ -59,6 +76,4 @@ fi
 
 log_header "LM Studio configuration complete"
 log_info "OpenAI-compatible endpoint: http://localhost:${LM_STUDIO_PORT}/v1"
-log_info "  Chat model:  qwen2.5-7b-instruct"
-log_info "  Coder model: qwen2.5-coder-7b-instruct"
-log_info "(Both models are served on the same port; the model field selects which one answers.)"
+log_info "  Model: qwen3.5-9b"

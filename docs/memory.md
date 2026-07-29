@@ -2,7 +2,7 @@
 
 ## Why Memory Matters
 
-Running local LLMs is memory-intensive. A 7B parameter model in Q4_K_M quantization uses approximately **4–6 GB of RAM** when loaded. With two models loaded (chat + coder), you need **8–12 GB** just for inference.
+Running local LLMs is memory-intensive. Qwen 3.5 9B (MLX 4-bit) uses approximately **5–7 GB of RAM** when loaded.
 
 On a 16 GB Mac, that leaves limited headroom for other applications.
 
@@ -52,11 +52,10 @@ pkill -f "App Name"
 
 ## Memory Tips
 
-- **Load one model at a time** if memory pressure is high. Start with the coder model when coding, or the chat model when chatting, not both.
 - **Use compressed memory sparingly** — excessive swapping degrades inference performance significantly (10–100x slower).
 - **Monitor with Activity Monitor** (⌘Space → "Activity Monitor") — check the Memory tab for pressure graph.
 - **Restart periodically** — macOS memory fragmentation can build up over days.
-- **Consider `q3_k_m` quantization** if you have only 16 GB. It's slightly lower quality but uses ~3 GB instead of ~5 GB per model.
+- **Consider a smaller MLX model** if you have only 16 GB. It uses less RAM at the cost of slightly lower quality.
 - **Upgrade RAM** if you run models frequently — 32 GB or 64 GB makes a substantial difference.
 
 ## Expected Memory Usage
@@ -65,8 +64,7 @@ pkill -f "App Name"
 |----------|-------------|-------|
 | macOS idle | 4–6 GB | Fresh boot |
 | + Browser (5 tabs) | 6–10 GB | |
-| + Chat model (Q4_K_M) | 10–15 GB | One model loaded |
-| + Both models (Q4_K_M) | 14–20 GB | May swap on 16 GB |
+| + Qwen 3.5 9B (MLX 4-bit) | 11–17 GB | Model loaded, may swap on 16 GB |
 | + All services + apps | 16+ GB | Heavy swapping likely |
 
 ## What Happens When Memory Runs Out

@@ -61,19 +61,17 @@ lsof -i :1234
 lsof -ti :1234 | xargs kill -TERM
 ```
 
-### A model name is not recognized
+### Model not loaded
 
-Both models are served by LM Studio on the single port 1234, dispatched by
-the request's `model` field. Check which models are actually loaded:
+Check that LM Studio has the model loaded:
 
 ```bash
 ~/.lmstudio/bin/lms ps
-# Expected identifiers:
-#   qwen2.5-7b-instruct
-#   qwen2.5-coder-7b-instruct
+# Expected identifier:
+#   qwen3.5-9b
 ```
 
-If one is missing, run `./scripts/configure_lmstudio.sh` to import and load it.
+If missing, run `./scripts/configure_lmstudio.sh` to import and load it.
 
 ### Models won't download
 
@@ -85,12 +83,9 @@ ping -c 3 huggingface.co
 df -h /
 
 # Manual download
-# Visit https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF and
-# https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF
-# Download the Q4_K_M files into models/ keeping their original names:
-#   qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf   (chat is split — BOTH shards required)
-#   qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf
-#   qwen2.5-coder-7b-instruct-q4_k_m.gguf            (coder is a single file)
+# Visit https://huggingface.co/bartowski/Qwen_Qwen3.5-9B-GGUF
+# Download the Q4_K_M file into models/ (it will be picked up automatically):
+#   Qwen_Qwen3.5-9B-Q4_K_M.gguf
 ```
 
 ### Slow inference

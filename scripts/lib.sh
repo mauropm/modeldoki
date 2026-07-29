@@ -224,8 +224,51 @@ lms_available() {
   [[ -x "$LMS_CLI" ]]
 }
 
+# Terminate the LM Studio GUI application so the headless CLI (lms) can
+# manage the server and models without interference.
+ensure_headless_lmstudio() {
+  local gui_pids
+  gui_pids=$(pgrep -f "/Applications/LM Studio.app" 2>/dev/null || true)
+  if [[ -z "$gui_pids" ]]; then
+    return 0
+  fi
+  log_info "LM Studio GUI is running — shutting it down for headless mode..."
+  kill -TERM ${(f)gui_pids} 2>/dev/null || true
+  sleep 2
+  gui_pids=$(pgrep -f "/Applications/LM Studio.app" 2>/dev/null || true)
+  if [[ -n "$gui_pids" ]]; then
+    kill -KILL ${(f)gui_pids} 2>/dev/null || true
+  fi
+  sleep 1
+  log_ok "LM Studio GUI stopped (headless daemon continues)"
+}
+
+# Check whether a model identifier is already known to LM Studio (imported
+# or downloaded via `lms get`).  Returns 0 if found, 1 otherwise.
+lms_model_known() {
+  local identifier="$1"
+  "$LMS_CLI" ls --json 2>/dev/null | \
+    jq -r '.[] | select(.type == "llm") | .modelKey, .displayName' 2>/dev/null | \
+    grep -qi "$identifier" && return 0
+  return 1
+}
+
+# Look up the canonical model key in `lms ls` for a given identifier.
+# Returns the modelKey from LM Studio's model index, or empty string.
+lms_lookup_model_key() {
+  local identifier="$1"
+  "$LMS_CLI" ls --json 2>/dev/null | \
+    jq -r --arg ident "$identifier" \
+      '.[] | select(.type == "llm") | select(
+         (.displayName | test($ident; "i")) or
+         (.modelKey    | test($ident; "i"))
+       ) | .modelKey' 2>/dev/null | head -1
+}
+
 # Load a model into LM Studio with a clean API identifier.
-# Usage: lms_ensure_model_loaded <gguf-path> <identifier> [context-length]
+# Usage: lms_ensure_model_loaded <gguf-path|''> <identifier> [context-length]
+# When model_file is empty and the model is already known to LM Studio, the
+# canonical model key from `lms ls` is used.
 lms_ensure_model_loaded() {
   local model_file="$1"
   local identifier="$2"
@@ -242,11 +285,34 @@ lms_ensure_model_loaded() {
     return 0
   fi
 
-  # Import (hard-link, keeps the file in models/) — safe to re-run.
-  "$LMS_CLI" import "$model_file" --hard-link -y >/dev/null 2>&1 || true
+  # Determine what to load: a local GGUF path, or a model key from LM Studio.
+  local load_arg
+  if [[ -n "$model_file" ]]; then
+    load_arg="$model_file"
+    # Import only if not yet known to LM Studio.
+    if ! lms_model_known "$identifier"; then
+      "$LMS_CLI" import "$model_file" --hard-link -y >/dev/null 2>&1 || true
+    fi
+  else
+    load_arg=$(lms_lookup_model_key "$identifier")
+    if [[ -z "$load_arg" ]]; then
+      # Model not in LM Studio's index.  Attempt to register the existing
+      # model files on disk via `lms get`, which detects and indexes
+      # already-downloaded models without re-downloading them.
+      if find "${HOME}/.lmstudio/models" -maxdepth 3 -type d -iname "*qwen*3.5*9b*" 2>/dev/null | head -1 >/dev/null; then
+        log_info "Found Qwen 3.5 9B on disk — registering with LM Studio..."
+        "$LMS_CLI" get "qwen/qwen3.5-9b" -y >/dev/null 2>&1 || true
+        load_arg=$(lms_lookup_model_key "$identifier")
+      fi
+    fi
+    if [[ -z "$load_arg" ]]; then
+      log_warn "${identifier} not found in LM Studio — run scripts/install_models.sh"
+      return 1
+    fi
+  fi
 
-  if "$LMS_CLI" load "$model_file" --identifier "$identifier" \
-      --gpu max --context-length "$context_length" -y >/dev/null 2>&1; then
+  if "$LMS_CLI" load "$load_arg" --identifier "$identifier" \
+      --gpu max --context-length "$context_length" --ttl 86400 -y >/dev/null 2>&1; then
     log_ok "Loaded ${identifier}"
   else
     log_warn "Could not load ${identifier} via lms — load it in the LM Studio GUI"
